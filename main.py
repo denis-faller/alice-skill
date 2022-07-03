@@ -30,27 +30,26 @@ LIMIT_WORDS = 10
 
 def getWords():
     global connection, words, LIMIT_WORDS
-    connection = database_lib.createConnection("localhost", "root", "", 3307)
+    f = open('config.txt')
+    config = []
+    for line in f:
+        config.append(line)
+    connection = database_lib.createConnection(config[0], config[1], config[2].strip(), config[3])
     useDatabaseQuery = "USE skill_alice"
     database_lib.useDatabase(connection, useDatabaseQuery)
     selectQuery = "SELECT * FROM words WHERE status = 0 LIMIT " + str(LIMIT_WORDS)
     words = database_lib.selectRows(connection, selectQuery)
-    logging.error('%s raised an error',  words)
+    #logging.error('%s raised an error',  words)
 
 # Логика правильно/неправильно (если неправильно то выводить правильные варианты, повтор в конце)
 # Выборка (неправильные 50%, новые 50%)
 def getWord():
-    global cntWords, words
+    global cntWords, words, idCurWord, nextWord, translationOptions
     idCurWord = words[0][0]
+    nextWord = words[1][1]    
     translationOptions = words[0][2]
     translationOptions = translationOptions.replace("[", "").replace("]", "").replace('"', "").replace(" ", "").split(",")
-    if cntWords == 1:
-        words.pop(0)
-    nextWord = words[1][1]
-    if cntWords != 0:
-        words.pop(0)
-    else:
-        idCurWord = words[0][0]
+    words.pop(0)
     return [idCurWord, nextWord, translationOptions]
     
 def resultAnswer(res, requestText):
@@ -70,8 +69,8 @@ def resultAnswer(res, requestText):
         
     #logging.error('%s raised an error',  wordIndex)
         
-    #logging.error('%s raised an error',  idCurWord)
-    #logging.error('%s raised an error',  translationOptions)
+    #logging.error('idCurWord %s raised an error',  idCurWord)
+    #logging.error('translationOptions %s raised an error',  translationOptions)
     isHasInTranslationOptions = False
     for wordItem in translationOptions:
         #logging.error('%s raised an error',  wordItem)
@@ -99,7 +98,7 @@ def resultAnswer(res, requestText):
 # Логика правильно/неправильно (если неправильно то выводить правильные варианты, повтор в конце)
 # Добавить кнопку завершить, повторить
 def handleDialog(res, req):
-    global cntWords, words, idCurWord, nextWord, LIMIT_WORDS
+    global cntWords, words, idCurWord, nextWord, translationOptions, LIMIT_WORDS
     requestText = req['request']['original_utterance'].lower()
     
     if cntWords > 0:
@@ -119,8 +118,8 @@ def handleDialog(res, req):
                     if len(words) == 0:
                         res['response']['text'] = "Слов для изучения больше нет"
                         return
-                    curWord = words[0][1]
-                    res['response']['text'] = "Продолжаем.\nПереведи слово - " + curWord
+                    nextWord = words[0][1]
+                    res['response']['text'] = "Продолжаем.\nПереведи слово - " + nextWord
                     cntWords = 1
             elif cntWords < LIMIT_WORDS + 1:
                 #logging.error('%s raised an error', words[wordIndex][1])
