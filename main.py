@@ -31,7 +31,6 @@ translationOptions = ""
 LIMIT_WORDS = 11
 sessionLimit = LIMIT_WORDS
 
-# Выборка (неправильные 50%, новые 50%)
 def getWords():
     global connection, words, LIMIT_WORDS
     f = open('config.txt')
@@ -41,8 +40,11 @@ def getWords():
     connection = database_lib.createConnection(config[0], config[1], config[2].strip(), config[3])
     useDatabaseQuery = "USE skill_alice"
     database_lib.useDatabase(connection, useDatabaseQuery)
-    selectQuery = "SELECT * FROM words WHERE status = 0 LIMIT " + str(LIMIT_WORDS - 1)
+    selectQuery = "SELECT * FROM words WHERE status = 2 LIMIT " + str(LIMIT_WORDS - 6)
     words = database_lib.selectRows(connection, selectQuery)
+    lenInCorrectWords = len(words)
+    selectQuery = "SELECT * FROM words WHERE status = 0 LIMIT " + str(LIMIT_WORDS - lenInCorrectWords - 1)
+    words.extend(database_lib.selectRows(connection, selectQuery))
     #logging.error('%s raised an error',  words)
 
 def getWord():
@@ -71,9 +73,9 @@ def resultAnswer(res, requestText):
             
     correctAnswer = translationOptions[0]        
     
-    logging.error('%s translationOptions', translationOptions)
-    logging.error('%s cntWords',  cntWords)
-    logging.error('%s sessionLimit',  sessionLimit)
+    #logging.error('%s translationOptions', translationOptions)
+    #logging.error('%s cntWords',  cntWords)
+    #logging.error('%s sessionLimit',  sessionLimit)
     #logging.error('%s len',  len(words))
     if (isHasInTranslationOptions) and (requestText != ""):
         if cntWords == (sessionLimit - 1):
@@ -105,13 +107,12 @@ def resultAnswer(res, requestText):
     elif len(words) != 0:
         words.pop(0)
 
-# Логика правильно/неправильно (если неправильно то выводить правильные варианты, повтор в конце)
 # Добавить кнопку завершить, да-нет
 def handleDialog(res, req):
     global cntWords, words, idCurWord, nextWord, translationOptions, LIMIT_WORDS, sessionLimit
     requestText = req['request']['original_utterance'].lower()
     
-    logging.error('%s words', words)
+    #logging.error('%s words', words)
     if cntWords > 0:
         if requestText == "завершить":
             res['response']['text'] = "Отлично. Если будет скучно, потренируйся"
