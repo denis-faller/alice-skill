@@ -96,7 +96,7 @@ def resultAnswer(res, requestText):
         #logging.error('%s idCurWord',  idCurWord)    
         updateRowQuery = f"UPDATE words SET status = 2 WHERE id = " + str(idCurWord)
         database_lib.updateRow(connection, updateRowQuery, "words")
-        words.append((idCurWord, curWord, "{0}".format(translationOptions)))
+        words.append((idCurWord, curWord, str(translationOptions)))
         sessionLimit +=1
     if cntWords != (sessionLimit - 1):
         if len(words) != 0:
