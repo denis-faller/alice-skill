@@ -48,6 +48,7 @@ def insertRow(connection, query, tableName):
         print(f"In table '{tableName}' added data sucessfully")
     except Error as e:
         print(f"The error '{e}' occurred")
+        pass
         
 def updateRow(connection, query, tableName):
     cursor = connection.cursor()
