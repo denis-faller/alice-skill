@@ -83,6 +83,12 @@ def main():
         sessionID = session[0][0]
 
     logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+
+    if trasnslateObjects == 0:
+        trasnslateObjects = {sessionID: Translate()}
+    elif sessionID not in trasnslateObjects.keys():
+        trasnslateObjects[sessionID] = Translate()
+
     response = {
         'session': request.json['session'],
         'version': request.json['version'],
@@ -94,15 +100,36 @@ def main():
         },
     }
 
-    if trasnslateObjects == 0:
-        trasnslateObjects = {sessionID: Translate()}
-    elif sessionID not in trasnslateObjects.keys():
-        trasnslateObjects[sessionID] = Translate()
-        # f = open('log.txt', "w+")
-        # f.write(str(123))
-        # f.close()
-
     handleDialog(response, request.json)
+
+    if trasnslateObjects[sessionID].isAnswer:
+        buttons = [
+            {
+                "title": "завершить",
+                "payload": {"end": 1},
+                "hide": True,
+            },
+            {
+                "title": "да",
+                "payload": {"yes": 1},
+                "hide": True,
+            },
+            {
+                "title": "нет",
+                "payload": {"no": 1},
+                "hide": True,
+            }
+        ]
+    else:
+        buttons = [
+            {
+                "title": "завершить",
+                "payload": {"end": 1},
+                "hide": True,
+            }
+        ]
+    response['response']['buttons'] = buttons
+
     return json.dumps(response)
 
 
@@ -112,7 +139,6 @@ sessionsLimit = 0
 trasnslateObjects = 0
 sessionCode = ""
 sessionID = 0
-
 
 def getWords():
     global connection, LIMIT_WORDS, trasnslateObjects, sessionID
@@ -177,6 +203,7 @@ def resultAnswer(res, requestText):
     if (isHasInTranslationOptions) and (requestText != ""):
         if trasnslateObjects[sessionID].cntWords == (sessionsLimit[sessionID] - 1):
             res['response']['text'] = "Правильно. Будем продолжать?\n"
+            trasnslateObjects[sessionID].isAnswer = True
         elif len(trasnslateObjects[sessionID].words) == 0:
             res['response']['text'] = "Правильно. Слов для изучения нет\n"
         else:
@@ -186,6 +213,7 @@ def resultAnswer(res, requestText):
     else:
         if trasnslateObjects[sessionID].cntWords == (sessionsLimit[sessionID] - 1):
             res['response']['text'] = "Неправильно. Правильно {0}. Будем продолжать?\n".format(correctAnswer)
+            trasnslateObjects[sessionID].isAnswer = True
         elif len(trasnslateObjects[sessionID].words) == 0:
             res['response']['text'] = "Неправильно. Правильно {0}. Слов для изучения нет\n".format(correctAnswer)
         else:
@@ -209,14 +237,22 @@ def resultAnswer(res, requestText):
         trasnslateObjects[sessionID].words.pop(0)
 
 
-# Добавить кнопку завершить, да-нет
 def handleDialog(res, req):
     global trasnslateObjects, LIMIT_WORDS, sessionID, sessionsLimit
 
-    requestText = req['request']['original_utterance'].lower()
+    requestText =  ""
+    if 'original_utterance' in req['request']:
+        requestText = req['request']['original_utterance'].lower()
+    elif 'payload' in req['request']:
+        if 'end' in req['request']['payload']:
+            requestText = "завершить"
+        elif 'no' in req['request']['payload']:
+            requestText = "нет"
+        elif 'yes' in req['request']['payload']:
+            requestText = "да"
 
     # f = open('log.txt', "w+")
-    # f.write(str(trasnslateObjects[sessionID]))
+    # f.write(str(req))
     # f.close()
 
     # logging.error('%s words', words)
@@ -231,8 +267,10 @@ def handleDialog(res, req):
                 sessionsLimit[sessionID] = LIMIT_WORDS
             if trasnslateObjects[sessionID].cntWords == sessionsLimit[sessionID]:
                 if requestText == "нет":
+                    trasnslateObjects[sessionID].isAnswer = False
                     res['response']['text'] = "Отлично потренировались. Не забывай повторять"
                 else:
+                    trasnslateObjects[sessionID].isAnswer = False
                     getWords()
                     if len(trasnslateObjects[sessionID].words) == 0:
                         res['response']['text'] = "Слов для изучения нет"
