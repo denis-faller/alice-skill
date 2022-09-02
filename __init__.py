@@ -30,8 +30,8 @@ def main():
     # f.write(sessionCode)
     # f.close()
 
-    connection = database_lib.createConnection("localhost", "root", "12061991", 3306)
-    useDatabaseQuery = "USE skill_alice"
+    connection = database_lib.createConnection("localhost", "richsiqj_flask", "UXy6T4%6", 3306)
+    useDatabaseQuery = "USE richsiqj_flask"
     database_lib.useDatabase(connection, useDatabaseQuery)
 
     selectQuery = "SELECT * FROM sessions WHERE code = '" + sessionCode + "'"

@@ -2,15 +2,15 @@ import json
 import database_lib
 import sys
 
-f = open('config.txt')
-config = []
-for line in f:
-    config.append(line)
+# f = open('config.txt')
+# config = []
+# for line in f:
+#     config.append(line)
 
 #print (config[2])
 #sys.exit()
 
-connection = database_lib.createConnection(config[0], config[1], config[2].strip(), config[3])
+connection = database_lib.createConnection("localhost", "root", "12061991", 3306)
 
 if True:
     createDatabaseQuery = "CREATE DATABASE skill_alice"
