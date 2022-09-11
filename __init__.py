@@ -75,7 +75,7 @@ def main():
             16: {'word': 'big', 'tranlations': json.dumps(['большой'], ensure_ascii=False), 'status': 0},
             17: {'word': 'here', 'tranlations': json.dumps(['здесь'], ensure_ascii=False), 'status': 0},
             18: {'word': 'land', 'tranlations': json.dumps(['земля'], ensure_ascii=False), 'status': 0},
-            19: {'word': 'end', 'tranlations': json.dumps(['конец'], ensure_ascii=False), 'status': 0},
+            19: {'word': 'end', 'tranlations': json.dumps(['окончание'], ensure_ascii=False), 'status': 0},
             20: {'word': 'small', 'tranlations': json.dumps(['маленький'], ensure_ascii=False), 'status': 0},
             21: {'word': 'play', 'tranlations': json.dumps(['играть'], ensure_ascii=False), 'status': 0}
         }
@@ -219,7 +219,12 @@ def resultAnswer(res, requestText):
             res['response']['text'] = "Правильно. Будем продолжать?\n"
             trasnslateObjects[sessionID].isAnswer = True
         elif len(trasnslateObjects[sessionID].words) == 0:
-            res['response']['text'] = "Правильно. Слов для изучения нет\n"
+            getWords()
+            if len(trasnslateObjects[sessionID].words) == 0:
+                res['response']['text'] = "Правильно. Слов для изучения нет\n"
+            else:
+                res['response']['text'] = "Правильно. Будем продолжать?\n"
+                trasnslateObjects[sessionID].isRestart = True
         else:
             res['response']['text'] = "Правильно.\nПереведи слово - " + trasnslateObjects[sessionID].nextWord
         updateRowQuery = f"UPDATE words SET status = 1 WHERE id = " + str(trasnslateObjects[sessionID].idCurWord)
@@ -229,7 +234,12 @@ def resultAnswer(res, requestText):
             res['response']['text'] = "Неправильно. Правильно {0}. Будем продолжать?\n".format(correctAnswer)
             trasnslateObjects[sessionID].isAnswer = True
         elif len(trasnslateObjects[sessionID].words) == 0:
-            res['response']['text'] = "Неправильно. Правильно {0}. Слов для изучения нет\n".format(correctAnswer)
+            getWords()
+            if len(trasnslateObjects[sessionID].words) == 0:
+                res['response']['text'] = "Неправильно. Правильно {0}. Слов для изучения нет\n".format(correctAnswer)
+            else:
+                res['response']['text'] = "Неправильно. Правильно {0}. Будем продолжать?\n".format(correctAnswer)
+                trasnslateObjects[sessionID].isRestart = True
         else:
             res['response']['text'] = "Неправильно. Правильно {0}. Переведи слово - {1}".format(correctAnswer,
                                                                                                 trasnslateObjects[
@@ -279,7 +289,8 @@ def handleDialog(res, req):
                 sessionsLimit = {sessionID: LIMIT_WORDS}
             elif sessionID not in sessionsLimit.keys():
                 sessionsLimit[sessionID] = LIMIT_WORDS
-            if trasnslateObjects[sessionID].cntWords == sessionsLimit[sessionID]:
+            if (trasnslateObjects[sessionID].cntWords == sessionsLimit[sessionID]) or (trasnslateObjects[sessionID].isRestart):
+                trasnslateObjects[sessionID].isRestart = False
                 if requestText == "нет":
                     trasnslateObjects[sessionID].isAnswer = False
                     res['response']['text'] = "Отлично потренировались. Не забывай повторять"
